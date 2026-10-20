@@ -1,0 +1,61 @@
+version: "3.9"
+
+services:
+  mongo:
+    image: mongo:7
+    container_name: sucre-mongo
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_data:/data/db
+
+  destinos-service:
+    build: ./destinos-service
+    container_name: destinos-service
+    ports:
+      - "4001:4001"
+    environment:
+      - PORT=4001
+      - MONGO_URI=mongodb://mongo:27017/sucre_turistico_destino
+    depends_on:
+      - mongo
+
+  alojamiento-service:
+    build: ./alojamiento-service
+    container_name: alojamiento-service
+    ports:
+      - "4002:4002"
+    environment:
+      - PORT=4002
+      - MONGO_URI=mongodb://mongo:27017/sucre_turistico_alojamiento
+    depends_on:
+      - mongo
+
+  gastronomia-service:
+    build: ./gastronomia-service
+    container_name: gastronomia-service
+    ports:
+      - "4003:4003"
+    environment:
+      - PORT=4003
+      - MONGO_URI=mongodb://mongo:27017/sucre_turistico_restaurante
+    depends_on:
+      - mongo
+
+  gateway:
+    build: ./gateway
+    container_name: api-gateway
+    ports:
+      - "4000:4000"
+    environment:
+      - PORT=4000
+      - DESTINOS_SERVICE_URL=http://destinos-service:4001
+      - ALOJAMIENTO_SERVICE_URL=http://alojamiento-service:4002
+      - GASTRONOMIA_SERVICE_URL=http://gastronomia-service:4003
+    depends_on:
+      - destinos-service
+      - alojamiento-service
+      - gastronomia-service
+
+volumes:
+  mongo_data:
